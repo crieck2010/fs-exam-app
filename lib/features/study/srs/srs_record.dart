@@ -1,4 +1,4 @@
-import '../../data/models/question.dart';
+import '../../../data/models/question.dart';
 
 /// Spaced-repetition state per question, implementing the SM-2 algorithm
 /// (SuperMemo 2).
