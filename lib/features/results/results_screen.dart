@@ -4,6 +4,7 @@ import '../../data/models/question.dart';
 import '../domains/domain_info.dart';
 import '../quiz/quiz_controller.dart';
 import '../quiz/quiz_screen.dart';
+import '../study/study_event.dart';
 
 /// Score summary, per-domain breakdown, and expandable review of every
 /// answered question with its worked explanation.
@@ -14,7 +15,7 @@ class ResultsScreen extends StatelessWidget {
   final List<Question> allQuestions;
 
   /// Forwarded to retake/drill sessions so SRS keeps learning.
-  final Future<void> Function(Question question, bool isCorrect)? onAnswerLocked;
+  final Future<void> Function(AnswerEvent event)? onAnswerLocked;
 
   const ResultsScreen({
     super.key,
@@ -136,6 +137,7 @@ class ResultsScreen extends StatelessWidget {
                           builder: (_) => QuizScreen(
                             questions: retry,
                             title: title,
+                            sessionKind: 'retake',
                             onAnswerLocked: onAnswerLocked,
                           ),
                         ),
@@ -154,6 +156,7 @@ class ResultsScreen extends StatelessWidget {
                             builder: (_) => QuizScreen(
                               questions: drill,
                               title: '$title — misses',
+                              sessionKind: 'drill',
                               onAnswerLocked: onAnswerLocked,
                             ),
                           ),

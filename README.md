@@ -16,9 +16,14 @@ engine, with worked explanations on every answer. Light and dark mode included.
 - **Study-grade feedback** — answers lock on first tap (exam discipline),
   explanations reveal immediately (study value)
 - **Study system** — question of the day (same for everyone, daily),
-  streaks with best-day tracking, and SM-2 spaced repetition: every answer
-  schedules the question's next review, and the "due for review" queue
-  serves the most overdue first
+  streaks with best-day tracking, and SM-2 spaced repetition with
+  **confidence-graded reviews** (Guessed / Pretty sure / Knew it maps to
+  the full 0–5 quality scale): every answer schedules the question's next
+  review, and the "due for review" queue serves the most overdue first
+- **Weekly report + focus areas** — accuracy by section, weakest/strongest
+  sections (min 5 attempts to qualify), one-tap drills of failed questions
+- **Notification nudges** — QOTD morning nudge, conditional streak saver,
+  Monday weekly report; per-nudge toggles in Settings
 - **Results** — score, per-section breakdown, expandable miss review,
   retake and drill-your-misses modes (SRS keeps learning through retakes)
 - **Light / dark / system theme** — Material 3, persisted across launches
@@ -73,8 +78,11 @@ tools/generate_banks.py
 
 - **v0.1.0** ✅ — shell: picker, quiz, results, theming, validated banks
 - **v0.2.0** ✅ — question-of-the-day, streaks, SM-2 spaced repetition
-- **v0.3.0** — confidence-graded reviews (full 0–5 SM-2 quality), weekly
-  study report, sqflite if history outgrows SharedPreferences
+- **v0.3.0** ✅ — confidence-graded reviews, weekly report, focus
+  areas/strengths, notification nudges
+- **v0.3.1** — milestone celebrations (streak/question-count, checked on
+  app open), sqflite if journal outgrows SharedPreferences
+- **v0.4.0** — exam-date setting with countdown + weak-area pings
 - **Phase 3** — freemium (free daily quota + AdMob) + one-time unlock via
   the `Entitlements` seam; store listings (Play $25, Apple $99/yr)
 

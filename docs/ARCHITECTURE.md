@@ -17,6 +17,9 @@ lib/
             theme_controller.dart  ThemeMode state + SharedPreferences persistence.
         monetization/
             monetization.dart      Phase 3 seam: Entitlements interface + stub.
+        notifications/
+            notification_service.dart  Local nudges: QOTD, streak saver,
+                                       weekly report (+ Settings toggles).
     data/
         models/question.dart       Dart mirror of engine schema v1 (validated).
         bank_repository.dart       Asset loading + v1 contract validation.
@@ -28,10 +31,13 @@ lib/
         results/                   Score, per-domain breakdown, miss review.
         settings/                  Theme mode segmented control, about.
         study/
-            srs/                   SM-2 scheduler (pure Dart, no Flutter) +
-                                   StudyRepository (SharedPreferences).
+            srs/                   SM-2 scheduler + confidence mapping (pure Dart,
+                                   no Flutter) + StudyRepository
+                                   (SharedPreferences: records, journal).
             streaks/               Pure streak state machine.
             qotd/                  Deterministic daily question + controller.
+            insights/              WeeklyReport + Insights builders (pure Dart).
+            report/                Weekly report screen.
 
 assets/banks/*.json                Engine-generated banks (tools/generate_banks.py).
 tools/generate_banks.py            Regenerates assets from the Python engine.

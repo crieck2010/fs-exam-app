@@ -3,22 +3,27 @@ import 'package:flutter/material.dart';
 import '../../data/models/question.dart';
 import '../domains/domain_info.dart';
 import '../results/results_screen.dart';
+import '../study/srs/confidence.dart';
+import '../study/study_event.dart';
 import 'quiz_controller.dart';
 
-/// One question per screen: stem, four choices, immediate feedback with
-/// the worked explanation, then next. Answers lock on first tap.
+/// One question per screen: stem, four choices, confidence prompt,
+/// immediate feedback with the worked explanation, then next.
+/// Answers lock on first tap.
 class QuizScreen extends StatefulWidget {
   final List<Question> questions;
   final String title;
+  final String sessionKind;
 
-  /// Wired by the study layer (SRS recording, QOTD, streaks). Null for
-  /// plain practice sessions.
-  final Future<void> Function(Question question, bool isCorrect)? onAnswerLocked;
+  /// Wired by the study layer (SRS recording, QOTD, streaks, journal).
+  /// Fires after confidence is submitted. Null for plain practice sessions.
+  final Future<void> Function(AnswerEvent event)? onAnswerLocked;
 
   const QuizScreen({
     super.key,
     required this.questions,
     required this.title,
+    this.sessionKind = 'quiz',
     this.onAnswerLocked,
   });
 
@@ -32,8 +37,11 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = QuizController(widget.questions,
-        onAnswerLocked: widget.onAnswerLocked);
+    _controller = QuizController(
+      widget.questions,
+      sessionKind: widget.sessionKind,
+      onAnswerLocked: widget.onAnswerLocked,
+    );
     _controller.addListener(_refresh);
   }
 
@@ -101,7 +109,11 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
               const SizedBox(height: 8),
               ...List.generate(4, (i) => _choiceButton(context, question, i)),
-              if (_controller.answered) ...[
+              if (_controller.needsConfidence) ...[
+                const SizedBox(height: 8),
+                _confidenceCard(context),
+              ],
+              if (_controller.answered && !_controller.needsConfidence) ...[
                 const SizedBox(height: 8),
                 Card(
                   color: colorScheme.surfaceContainerHighest,
@@ -146,7 +158,10 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   const Spacer(),
                   FilledButton(
-                    onPressed: _controller.answered
+                    // Next unlocks after confidence: skipping it would
+                    // drop the question from SRS scheduling.
+                    onPressed: _controller.answered &&
+                            !_controller.needsConfidence
                         ? () {
                             if (_controller.isLast) {
                               _finish();
@@ -165,6 +180,55 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
       ),
     );
+  }
+
+  /// One-tap self-report that grades the SM-2 quality of this review.
+  /// The explanation reveals after this — the tap is the price of
+  /// honest scheduling.
+  Widget _confidenceCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'How confident were you?',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            // SegmentedButton with no persistent selection: each option
+            // is a one-tap submit, the Material 3 pattern for exclusive
+            // choice from a small set.
+            SegmentedButton<ConfidenceLevel>(
+              segments: [
+                for (final level in ConfidenceLevel.values)
+                  ButtonSegment(
+                    value: level,
+                    label: Text(level.label),
+                    icon: Icon(_confidenceIcon(level)),
+                  ),
+              ],
+              selected: const <ConfidenceLevel>{},
+              onSelectionChanged: (selection) =>
+                  _controller.submitConfidence(selection.first),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _confidenceIcon(ConfidenceLevel level) {
+    switch (level) {
+      case ConfidenceLevel.guessed:
+        return Icons.help_outline;
+      case ConfidenceLevel.fairlySure:
+        return Icons.thumb_up_outlined;
+      case ConfidenceLevel.knewIt:
+        return Icons.bolt_outlined;
+    }
   }
 
   Widget _choiceButton(BuildContext context, Question question, int i) {

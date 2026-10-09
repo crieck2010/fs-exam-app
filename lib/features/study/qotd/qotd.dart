@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../../data/models/question.dart';
 import '../srs/study_repository.dart';
 import '../streaks/streak_logic.dart';
+import '../study_event.dart';
 
 /// Deterministic daily question: every user with the same bank gets the same
 /// question on the same calendar day (local time). The seed is the day count,
@@ -20,7 +21,6 @@ Question questionOfTheDay(List<Question> bank, DateTime date) {
 /// answering it triggers.
 class QotdController extends ChangeNotifier {
   final StudyRepository _repo;
-  final List<Question> _bank;
 
   late final String todayKey;
   late final Question today;
@@ -31,8 +31,7 @@ class QotdController extends ChangeNotifier {
     required StudyRepository repo,
     required List<Question> bank,
     required DateTime now,
-  })  : _repo = repo,
-        _bank = bank {
+  }) : _repo = repo {
     todayKey = dateKey(now);
     today = questionOfTheDay(bank, now);
     _answered = _repo.qotdAnsweredDate == todayKey;
@@ -43,14 +42,15 @@ class QotdController extends ChangeNotifier {
   bool? get wasCorrect => _wasCorrect;
 
   /// Locks in today's answer: persists QOTD state, extends the streak,
-  /// and feeds the question to the SRS scheduler. Idempotent per day.
-  Future<void> markAnswered(bool correct, DateTime now) async {
+  /// and feeds the confidence-graded quality to the SRS scheduler.
+  /// Idempotent per day.
+  Future<void> markAnswered(AnswerEvent event) async {
     if (_answered) return;
     _answered = true;
-    _wasCorrect = correct;
-    await _repo.setQotdAnswered(todayKey, correct);
-    await _repo.saveStreak(recordStreakDay(_repo.loadStreak(), now));
-    await _repo.recordAnswer(today, correct, now);
+    _wasCorrect = event.isCorrect;
+    await _repo.setQotdAnswered(todayKey, event.isCorrect);
+    await _repo.saveStreak(recordStreakDay(_repo.loadStreak(), event.answeredAt));
+    await _repo.recordAnswer(event);
     notifyListeners();
   }
 }

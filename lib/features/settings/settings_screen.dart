@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/notifications/notification_service.dart';
 import '../../core/theme/theme_controller.dart';
 
-/// Settings: appearance (system / light / dark) and about.
-class SettingsScreen extends StatelessWidget {
+/// Settings: appearance (system / light / dark), notification nudges,
+/// and about.
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final controller = context.watch<ThemeController>();
+    final themeController = context.watch<ThemeController>();
+    final notifications = context.watch<NotificationService>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -42,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
                     icon: Icon(Icons.dark_mode_outlined),
                   ),
                 ],
-                selected: {controller.mode},
+                selected: {themeController.mode},
                 onSelectionChanged: (selection) =>
                     context.read<ThemeController>().setMode(selection.first),
               ),
@@ -51,6 +59,48 @@ class SettingsScreen extends StatelessWidget {
                 'System follows your phone\u2019s setting. '
                 'Your choice is saved on this device.',
                 style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 24),
+              Text('Notifications', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                secondary: const Icon(Icons.today_outlined),
+                title: const Text('Question of the day'),
+                subtitle:
+                    const Text('Daily 8:00 AM nudge with today\u2019s question'),
+                value: notifications.qotdEnabled,
+                onChanged: (value) async {
+                  await notifications.setQotdEnabled(value);
+                  await _resync(context, notifications);
+                },
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.local_fire_department_outlined),
+                title: const Text('Streak saver'),
+                subtitle: const Text(
+                    '8:00 PM reminder, only when today\u2019s question is '
+                    'still unanswered and a streak is alive'),
+                value: notifications.streakSaverEnabled,
+                onChanged: (value) async {
+                  await notifications.setStreakSaverEnabled(value);
+                  await _resync(context, notifications);
+                },
+              ),
+              SwitchListTile(
+                secondary: const Icon(Icons.bar_chart_outlined),
+                title: const Text('Weekly report'),
+                subtitle:
+                    const Text('Monday 8:00 AM — your week in review'),
+                value: notifications.weeklyEnabled,
+                onChanged: (value) async {
+                  await notifications.setWeeklyEnabled(value);
+                  await _resync(context, notifications);
+                },
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.settings_outlined),
+                label: const Text('Open system notification settings'),
+                onPressed: notifications.openSystemSettings,
               ),
               const SizedBox(height: 24),
               Text('About', style: theme.textTheme.titleLarge),
@@ -68,12 +118,24 @@ class SettingsScreen extends StatelessWidget {
               const ListTile(
                 leading: Icon(Icons.lock_outlined),
                 title: Text('Version'),
-                subtitle: Text('0.1.0 (engine schema v1.0.0)'),
+                subtitle: Text('0.3.0 (engine schema v1.0.0)'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Reconciles schedules with the new toggle state. Conservative: never
+  /// arms a streak saver from Settings (home re-arms it on every open
+  /// with real state).
+  Future<void> _resync(
+      BuildContext context, NotificationService notifications) async {
+    await notifications.refreshSchedules(
+      qotdAnsweredToday: true,
+      streakCount: 0,
+    );
+    if (context.mounted) setState(() {});
   }
 }

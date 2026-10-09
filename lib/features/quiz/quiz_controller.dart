@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../data/models/question.dart';
+import '../study/srs/confidence.dart';
+import '../study/study_event.dart';
 
 /// Per-question answer state for the results screen.
 class AnswerRecord {
@@ -16,21 +18,31 @@ class AnswerRecord {
 
 /// Owns quiz session state: current position, locked-in answers, scoring.
 ///
-/// Answers lock on first tap (exam discipline); the explanation is revealed
-/// immediately so every question is a study rep, not just a test.
+/// Flow per question: select -> confidence prompt -> explanation.
+/// Answers lock on first tap (exam discipline); the confidence-graded
+/// quality feeds the SRS scheduler; the explanation is the study rep.
+///
+/// [onAnswerLocked] fires once per question, after confidence is submitted.
+/// The controller stays persistence-agnostic — the study layer wires the
+/// hook.
 class QuizController extends ChangeNotifier {
   final List<Question> questions;
 
-  /// Called exactly once per question when an answer locks in. The study
-  /// layer wires this to SRS recording / QOTD / streaks; the controller
-  /// itself stays persistence-agnostic.
-  final Future<void> Function(Question question, bool isCorrect)? onAnswerLocked;
+  /// Where this session came from: 'quiz' | 'qotd' | 'review' | 'drill' | 'retake'.
+  final String sessionKind;
+
+  /// Called exactly once per question, after confidence is submitted.
+  final Future<void> Function(AnswerEvent event)? onAnswerLocked;
 
   int _index = 0;
   final Map<String, int> _answers = {};
+  final Set<String> _awaitingConfidence = {};
 
-  QuizController(this.questions, {this.onAnswerLocked})
-      : assert(questions.isNotEmpty);
+  QuizController(
+    this.questions, {
+    this.sessionKind = 'quiz',
+    this.onAnswerLocked,
+  }) : assert(questions.isNotEmpty);
 
   int get index => _index;
   int get total => questions.length;
@@ -40,16 +52,39 @@ class QuizController extends ChangeNotifier {
   bool get answered => _answers.containsKey(current.qid);
   int? get selectedIndex => _answers[current.qid];
 
+  /// True when the current question is answered but confidence hasn't
+  /// been submitted yet.
+  bool get needsConfidence => _awaitingConfidence.contains(current.qid);
+
   /// Locks in an answer. Ignored if the question was already answered.
+  /// The study hook fires later, in [submitConfidence].
   void select(int choiceIndex) {
     if (answered) return;
     final question = current;
     _answers[question.qid] = choiceIndex;
+    _awaitingConfidence.add(question.qid);
     notifyListeners();
-    // Fire-and-forget: study persistence must never block the UI.
+  }
+
+  /// Submits self-reported confidence, computes SM-2 quality, and fires
+  /// the study hook. Ignored if this question isn't awaiting confidence.
+  void submitConfidence(ConfidenceLevel level) {
+    final question = current;
+    if (!_awaitingConfidence.remove(question.qid)) return;
+    final selected = _answers[question.qid]!;
+    final correct = question.isCorrect(selected);
+    notifyListeners();
     final hook = onAnswerLocked;
     if (hook != null) {
-      unawaited(hook(question, question.isCorrect(choiceIndex)));
+      // Fire-and-forget: study persistence must never block the UI.
+      unawaited(hook(AnswerEvent(
+        question: question,
+        isCorrect: correct,
+        quality: level.qualityFor(correct),
+        confidence: level,
+        sessionKind: sessionKind,
+        answeredAt: DateTime.now(),
+      )));
     }
   }
 
@@ -73,8 +108,7 @@ class QuizController extends ChangeNotifier {
       .where((q) => _answers[q.qid] != null && q.isCorrect(_answers[q.qid]!))
       .length;
 
-  double get scoreFraction =>
-      total == 0 ? 0 : correctCount / total;
+  double get scoreFraction => total == 0 ? 0 : correctCount / total;
 
   List<AnswerRecord> get records => questions
       .where((q) => _answers.containsKey(q.qid))

@@ -1,12 +1,20 @@
 # Build & Run
 
-Requires the Flutter SDK (3.4+): https://docs.flutter.dev/get-started/install
+Requires the Flutter SDK (3.38+): https://docs.flutter.dev/get-started/install
+
+First run on a fresh checkout (platform folders are not committed):
+
+```bash
+flutter create --platforms=android,ios .
+```
+
+Then:
 
 ```bash
 cd fs-exam-app
 flutter pub get        # install dependencies
 flutter analyze        # lints (must be clean)
-flutter test           # unit tests (model + bank validation)
+flutter test           # unit tests
 flutter run            # debug on a connected device / emulator
 ```
 

@@ -24,12 +24,22 @@ The scheduler is **pure Dart** (`lib/features/study/srs/srs_record.dart`,
 zero Flutter imports) — the app-side equivalent of the program's
 engine-first rule. `test/srs_scheduler_test.dart` pins the vectors above.
 
-### Quality mapping (v0.2.0)
+### Quality mapping (v0.3.0)
 
-Multiple choice only observes correct/incorrect, so quality is binary:
-correct = 4 (good recall), incorrect = 2 (fail, restarts the ladder).
-A future version may add a confidence prompt ("knew it" / "guessed") to
-use the full 0–5 range — the scheduler already supports it.
+After each answer the app asks "How confident were you?" — one tap that
+grades the SM-2 quality:
+
+| confidence   | correct | incorrect |
+|--------------|---------|-----------|
+| Knew it      |    5    |     1     |
+| Pretty sure  |    4    |     1     |
+| Guessed      |    3    |     2     |
+
+"Knew it" + wrong = 1: confident-but-wrong is the most dangerous state,
+so it re-enters the fast review lane. The mapping lives in pure Dart
+(`lib/features/study/srs/confidence.dart`) with a test pinning the full
+matrix. The quiz's Next button unlocks only after confidence is
+submitted — skipping it would silently drop the question from scheduling.
 
 ## Question of the day
 
