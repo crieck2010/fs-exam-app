@@ -25,3 +25,10 @@ local.properties
 Pods/
 *.xcworkspace
 DerivedData/
+
+# CI workflow: kept out of pushes from this environment because the
+# GitHub OAuth token lacks the `workflow` scope (server rejects pushes
+# containing .github/workflows). The file is ready at
+# .github/workflows/ci.yml — push it once from a machine whose token
+# has workflow scope, then remove this ignore.
+.github/
