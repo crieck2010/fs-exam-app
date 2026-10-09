@@ -1,7 +1,7 @@
 name: fs_exam_app
 description: FS exam quiz practice app for iOS and Android — Phase 2 of the FS Exam Prep program.
 publish_to: 'none'
-version: 0.3.0+3
+version: 0.4.0+4
 
 environment:
   sdk: '>=3.10.0 <4.0.0'

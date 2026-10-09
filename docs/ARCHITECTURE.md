@@ -38,6 +38,8 @@ lib/
             qotd/                  Deterministic daily question + controller.
             insights/              WeeklyReport + Insights builders (pure Dart).
             report/                Weekly report screen.
+            milestones/            Milestone unlock logic (pure Dart).
+            exam/                  ExamCountdown phases (pure Dart).
 
 assets/banks/*.json                Engine-generated banks (tools/generate_banks.py).
 tools/generate_banks.py            Regenerates assets from the Python engine.

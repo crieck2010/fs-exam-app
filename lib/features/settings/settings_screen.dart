@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/theme/theme_controller.dart';
+import '../study/srs/study_repository.dart';
+import '../study/streaks/streak_logic.dart';
 
 /// Settings: appearance (system / light / dark), notification nudges,
-/// and about.
+/// exam date, and about.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -14,6 +16,13 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  String? _examDateKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _examDateKey = context.read<StudyRepository>().examDateKey;
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -103,6 +112,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: notifications.openSystemSettings,
               ),
               const SizedBox(height: 24),
+              Text('Exam', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.event_outlined),
+                title: const Text('Exam date'),
+                subtitle: Text(_examDateKey == null
+                    ? 'Not set — the countdown and exam pings need it'
+                    : _examDateKey!),
+                trailing: _examDateKey == null
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        tooltip: 'Clear exam date',
+                        onPressed: () async {
+                          await context
+                              .read<StudyRepository>()
+                              .clearExamDate();
+                          setState(() => _examDateKey = null);
+                        },
+                      ),
+                onTap: () => _pickExamDate(context),
+              ),
+              const SizedBox(height: 24),
               Text('About', style: theme.textTheme.titleLarge),
               const ListTile(
                 leading: Icon(Icons.info_outlined),
@@ -118,7 +150,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const ListTile(
                 leading: Icon(Icons.lock_outlined),
                 title: Text('Version'),
-                subtitle: Text('0.3.0 (engine schema v1.0.0)'),
+                subtitle: Text('0.4.0 (engine schema v1.0.0)'),
               ),
             ],
           ),
@@ -137,5 +169,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       streakCount: 0,
     );
     if (context.mounted) setState(() {});
+  }
+
+  Future<void> _pickExamDate(BuildContext context) async {
+    final now = DateTime.now();
+    var initial = now.add(const Duration(days: 60));
+    if (_examDateKey != null) {
+      final parts = _examDateKey!.split('-').map(int.parse).toList();
+      initial = DateTime(parts[0], parts[1], parts[2]);
+    }
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: now.subtract(const Duration(days: 365)),
+      lastDate: now.add(const Duration(days: 730)),
+    );
+    if (picked != null && context.mounted) {
+      final key = dateKey(picked);
+      await context.read<StudyRepository>().setExamDate(key);
+      setState(() => _examDateKey = key);
+    }
   }
 }

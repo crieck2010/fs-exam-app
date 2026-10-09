@@ -24,6 +24,10 @@ engine, with worked explanations on every answer. Light and dark mode included.
   sections (min 5 attempts to qualify), one-tap drills of failed questions
 - **Notification nudges** — QOTD morning nudge, conditional streak saver,
   Monday weekly report; per-nudge toggles in Settings
+- **Milestone celebrations** — 7/30/100-day streaks, 100/500/1000 lifetime
+  questions, each celebrated once
+- **Exam countdown** — optional exam date with phased study advice; weak-area
+  pings in the final 30 days (in-app card + smarter notification body)
 - **Results** — score, per-section breakdown, expandable miss review,
   retake and drill-your-misses modes (SRS keeps learning through retakes)
 - **Light / dark / system theme** — Material 3, persisted across launches
@@ -80,9 +84,9 @@ tools/generate_banks.py
 - **v0.2.0** ✅ — question-of-the-day, streaks, SM-2 spaced repetition
 - **v0.3.0** ✅ — confidence-graded reviews, weekly report, focus
   areas/strengths, notification nudges
-- **v0.3.1** — milestone celebrations (streak/question-count, checked on
-  app open), sqflite if journal outgrows SharedPreferences
-- **v0.4.0** — exam-date setting with countdown + weak-area pings
+- **v0.4.0** ✅ — milestone celebrations, exam countdown, weak-area pings
+- **Next candidates** — perfect-quiz milestones, sqflite if the journal
+  outgrows SharedPreferences
 - **Phase 3** — freemium (free daily quota + AdMob) + one-time unlock via
   the `Entitlements` seam; store listings (Play $25, Apple $99/yr)
 

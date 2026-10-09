@@ -100,6 +100,8 @@ class NotificationService {
   Future<void> refreshSchedules({
     required bool qotdAnsweredToday,
     required int streakCount,
+    String? weakAreaName,
+    int? examDaysUntil,
   }) async {
     if (!_ready) return;
     try {
@@ -109,7 +111,9 @@ class NotificationService {
         await _scheduleDaily(
           id: _idQotd,
           title: "Today's FS question is ready",
-          body: 'One question keeps your streak alive.',
+          // In the exam crunch zone the nudge names the weak area —
+          // the body is dynamic because schedules re-arm on every open.
+          body: _qotdBody(weakAreaName, examDaysUntil),
           hour: 8,
           match: DateTimeComponents.time,
         );
@@ -144,6 +148,19 @@ class NotificationService {
     } catch (_) {
       // A failed schedule must never break the study flow.
     }
+  }
+
+  /// QOTD nudge body. In the crunch zone (exam <= 30 days out) with a
+  /// known weak area, the nudge says so — specificity beats generic.
+  String _qotdBody(String? weakAreaName, int? examDaysUntil) {
+    if (weakAreaName != null &&
+        examDaysUntil != null &&
+        examDaysUntil >= 1 &&
+        examDaysUntil <= 30) {
+      return '$examDaysUntil days to exam day — $weakAreaName needs work. '
+          "Today's question is ready.";
+    }
+    return 'One question keeps your streak alive.';
   }
 
   Future<void> _scheduleDaily({

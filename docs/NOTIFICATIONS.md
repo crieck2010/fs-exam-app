@@ -38,12 +38,12 @@ on. Implementation: `lib/core/notifications/notification_service.dart`
    cheap — suggested for v0.3.1.
 6. 🔜 **Comeback nudge** — 48h without opening the app: "Your review
    queue missed you." Needs background execution; Phase 3.
-7. 🔜 **Exam countdown** — user sets their exam date; daily countdown
-   that sharpens near the date ("42 days to exam day — Boundary Law is
-   your weakest section"). Pairs with an exam-date setting; suggested
-   for v0.4.
-8. 🔜 **Weak-area ping** — "Boundary Law is at 58% — 10-minute drill?"
-   On-open check or background; suggested for v0.4 with the exam date.
+7. 🔜→✅ **Exam countdown** — shipped in v0.4.0 as an in-app countdown
+   card (phased advice) plus a smarter QOTD notification body in the
+   crunch zone; the exam date lives in Settings.
+8. 🔜→✅ **Weak-area ping** — shipped in v0.4.0: urgent home card in the
+   final 30 days (dismissible daily) + the dynamic notification body.
+   A background-scheduled variant remains a Phase 3 candidate.
 
 ## Platform setup
 

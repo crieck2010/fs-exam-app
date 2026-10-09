@@ -23,6 +23,10 @@ class StudyRepository {
   static const _kStreak = 'streak_v1';
   static const _kQotdDate = 'qotd_date_v1';
   static const _kQotdCorrect = 'qotd_correct_v1';
+  static const _kLifetime = 'lifetime_answered_v1';
+  static const _kCelebrated = 'celebrated_milestones_v1';
+  static const _kExamDate = 'exam_date_v1';
+  static const _kWeakPingDismissed = 'weak_ping_dismissed_v1';
 
   /// Journal retention: 90 days, max 5000 events. The weekly report and
   /// insights only ever look back 30 days, so this is generous headroom.
@@ -63,8 +67,10 @@ class StudyRepository {
         _kJournal, jsonEncode([for (final e in events) e.toJson()]));
   }
 
-  /// Records one answered question: appends to the journal (pruned) and
-  /// feeds the confidence-graded quality into the SM-2 scheduler.
+  /// Records one answered question: appends to the journal (pruned),
+  /// feeds the confidence-graded quality into the SM-2 scheduler, and
+  /// bumps the lifetime answer counter (the journal is pruned, so the
+  /// lifetime count lives separately).
   Future<void> recordAnswer(AnswerEvent event) async {
     final journal = loadJournal()..add(event.toStudyEvent());
     final cutoff = DateTime.now()
@@ -76,6 +82,7 @@ class StudyRepository {
         ? pruned.sublist(pruned.length - _kJournalCap)
         : pruned;
     await _saveJournal(capped);
+    await prefs.setInt(_kLifetime, loadLifetimeAnswered() + 1);
 
     final records = loadRecords();
     records[event.question.qid] = SrsScheduler().review(
@@ -85,6 +92,32 @@ class StudyRepository {
     );
     await saveRecords(records);
   }
+
+  // ---- Lifetime + milestones ----
+
+  int loadLifetimeAnswered() => prefs.getInt(_kLifetime) ?? 0;
+
+  Set<String> loadCelebratedMilestones() =>
+      prefs.getStringList(_kCelebrated)?.toSet() ?? {};
+
+  Future<void> saveCelebratedMilestones(Set<String> ids) =>
+      prefs.setStringList(_kCelebrated, ids.toList());
+
+  // ---- Exam date ----
+
+  /// 'yyyy-MM-dd' local, or null when not set.
+  String? get examDateKey => prefs.getString(_kExamDate);
+
+  Future<void> setExamDate(String dateKeyValue) =>
+      prefs.setString(_kExamDate, dateKeyValue);
+
+  Future<void> clearExamDate() => prefs.remove(_kExamDate);
+
+  /// 'yyyy-MM-dd' of the last day the weak-area ping was dismissed.
+  String? get weakPingDismissedDate => prefs.getString(_kWeakPingDismissed);
+
+  Future<void> setWeakPingDismissed(String dateKeyValue) =>
+      prefs.setString(_kWeakPingDismissed, dateKeyValue);
 
   // ---- Streak ----
 

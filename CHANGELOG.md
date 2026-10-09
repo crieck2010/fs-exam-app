@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.4.0 — 2026-10-09
+- **Milestone celebrations** — 7/30/100-day streaks and 100/500/1000
+  lifetime questions, checked on app open, each celebrated exactly once
+  via a trophy dialog. Lifetime counter lives separately from the pruned
+  journal so it never undercounts.
+- **Exam countdown** — optional exam date in Settings drives a home
+  countdown card with study phases (distant → building → focused →
+  final week → exam day → passed), each with phase-appropriate advice.
+- **Weak-area pings** — in the crunch zone (≤ 30 days out), the home
+  focus card becomes an urgent ping naming the weakest section with a
+  one-tap drill, dismissible for the day; the 8 AM QOTD notification
+  body also names the weak area ("23 days to exam day — Boundary Law
+  needs work").
+- Tests: milestone unlock/no-refire, countdown phase boundaries,
+  lifetime counter independence, exam-date persistence.
+
 ## v0.3.0 — 2026-10-09
 - **Confidence-graded reviews** — one-tap "How confident were you?"
   (Guessed / Pretty sure / Knew it) after each answer maps onto the full

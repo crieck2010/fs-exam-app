@@ -10,6 +10,8 @@ import '../../data/models/question.dart';
 import '../quiz/quiz_screen.dart';
 import '../settings/settings_screen.dart';
 import '../study/insights/insights.dart';
+import '../study/milestones/milestones.dart';
+import '../study/exam/exam_countdown.dart';
 import '../study/qotd/qotd.dart';
 import '../study/report/weekly_report_screen.dart';
 import '../study/srs/srs_record.dart';
@@ -37,6 +39,7 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
   Future<_HomeData>? _dataFuture;
   final Set<String> _selected = {...kDomains.map((d) => d.slug)};
   int _questionCount = 20;
+  bool _milestonesShown = false;
 
   @override
   void initState() {
@@ -62,11 +65,39 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
         limit: 100000); // uncapped: this is the displayed count
     final journal = study.loadJournal();
     final streak = study.loadStreak();
+    final insights = Insights.build(journal, now);
+
+    // Milestones: unlock, persist as celebrated (exactly once ever),
+    // display after the first frame.
+    final celebrated = study.loadCelebratedMilestones();
+    final newMilestones = MilestoneChecker.newlyUnlocked(
+      streak: streak.count,
+      lifetimeAnswered: study.loadLifetimeAnswered(),
+      celebrated: celebrated,
+    );
+    if (newMilestones.isNotEmpty) {
+      await study.saveCelebratedMilestones({
+        ...celebrated,
+        ...newMilestones.map((m) => m.id),
+      });
+    }
+
+    final examDateKey = study.examDateKey;
+    ExamCountdown? countdown;
+    if (examDateKey != null) {
+      countdown = ExamCountdown.fromDateKey(examDateKey, now);
+    }
 
     // Re-arm notification nudges against today's state. Guarded inside.
+    // In the crunch zone the QOTD nudge names the weak area.
+    final weakArea = insights.focus.isNotEmpty
+        ? domainInfo(insights.focus.first.domain).name
+        : null;
     await notifications.refreshSchedules(
       qotdAnsweredToday: qotd.answered,
       streakCount: streak.count,
+      weakAreaName: weakArea,
+      examDaysUntil: countdown?.daysUntil,
     );
 
     return _HomeData(
@@ -76,7 +107,12 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
       dueCount: due.length,
       qotd: qotd,
       journal: journal,
-      insights: Insights.build(journal, now),
+      insights: insights,
+      newMilestones: newMilestones,
+      examDateKey: examDateKey,
+      countdown: countdown,
+      weakPingDismissed:
+          study.weakPingDismissedDate == dateKey(now),
     );
   }
 
@@ -87,6 +123,7 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
     if (!mounted) return;
     old?.qotd.removeListener(_refresh);
     old?.qotd.dispose();
+    _milestonesShown = false;
     setState(() {
       _dataFuture = _load();
     });
@@ -177,10 +214,43 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          return _buildHome(context, snapshot.data!);
+          final data = snapshot.data!;
+          if (data.newMilestones.isNotEmpty && !_milestonesShown) {
+            _milestonesShown = true;
+            WidgetsBinding.instance.addPostFrameCallback(
+                (_) => _celebrateMilestones(data.newMilestones));
+          }
+          return _buildHome(context, data);
         },
       ),
     );
+  }
+
+  /// Celebration dialog, one per newly unlocked milestone. Displayed once
+  /// per load; the IDs were already persisted as celebrated in _load, so
+  /// a rebuild can never re-fire them.
+  Future<void> _celebrateMilestones(List<Milestone> milestones) async {
+    for (final milestone in milestones) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: const Icon(
+            Icons.emoji_events,
+            size: 48,
+            color: Colors.amber,
+          ),
+          title: Text(milestone.title),
+          content: Text(milestone.message),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Keep going'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildHome(BuildContext context, _HomeData data) {
@@ -197,8 +267,9 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           _qotdCard(context, data),
+          _countdownCard(data),
           if (data.dueCount > 0) _dueCard(context, data),
-          _focusCard(context, data),
+          _studyFocusCard(context, data),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Text('Pick your sections',
@@ -312,12 +383,94 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
     );
   }
 
-  Widget _focusCard(BuildContext context, _HomeData data) {
+  /// Exam countdown card. Hidden until the user sets an exam date in
+  /// Settings — no date, no countdown, no nagging.
+  Widget _countdownCard(_HomeData data) {
+    final countdown = data.countdown;
+    if (countdown == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final urgent = countdown.isCrunch || countdown.phase == ExamPhase.examDay;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: urgent ? theme.colorScheme.errorContainer : null,
+      child: ListTile(
+        leading: Icon(
+          countdown.phase == ExamPhase.passed
+              ? Icons.event_busy_outlined
+              : Icons.event_outlined,
+          size: 32,
+          color: urgent ? theme.colorScheme.onErrorContainer : null,
+        ),
+        title: Text(
+          countdown.headline,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: urgent ? theme.colorScheme.onErrorContainer : null,
+          ),
+        ),
+        subtitle: Text(
+          countdown.advice,
+          style: TextStyle(
+              color: urgent
+                  ? theme.colorScheme.onErrorContainer
+                  : null),
+        ),
+      ),
+    );
+  }
+
+  /// Focus card. In the exam crunch zone (<= 30 days) with a weak area, it
+  /// becomes an urgent ping — dismissible for the day. Otherwise the
+  /// regular focus-area card.
+  Widget _studyFocusCard(BuildContext context, _HomeData data) {
     final focus = data.insights.focus;
     if (focus.isEmpty) return const SizedBox.shrink();
     final top = focus.first;
     final theme = Theme.of(context);
     final info = domainInfo(top.domain);
+    final countdown = data.countdown;
+
+    if (countdown != null &&
+        countdown.isCrunch &&
+        !data.weakPingDismissed) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        color: theme.colorScheme.tertiaryContainer,
+        child: ListTile(
+          leading: Icon(Icons.priority_high,
+              size: 32, color: theme.colorScheme.onTertiaryContainer),
+          title: Text(
+            '${countdown.daysUntil} days to exam day — ${info.name} needs work',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onTertiaryContainer,
+            ),
+          ),
+          subtitle: Text(
+            '${(top.accuracy * 100).round()}% over ${top.answered} answers. '
+            '10-minute drill?',
+            style:
+                TextStyle(color: theme.colorScheme.onTertiaryContainer),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Dismiss for today',
+                onPressed: () => _dismissWeakPing(data),
+              ),
+              FilledButton.tonal(
+                onPressed: () => _drillFocus(context, data, top.domain),
+                child: const Text('Drill'),
+              ),
+            ],
+          ),
+          onTap: () => _drillFocus(context, data, top.domain),
+        ),
+      );
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -335,6 +488,13 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
         onTap: () => _drillFocus(context, data, top.domain),
       ),
     );
+  }
+
+  Future<void> _dismissWeakPing(_HomeData data) async {
+    await context
+        .read<StudyRepository>()
+        .setWeakPingDismissed(dateKey(DateTime.now()));
+    _reload();
   }
 
   Future<void> _drillFocus(
@@ -438,6 +598,10 @@ class _HomeData {
   final QotdController qotd;
   final List<StudyEvent> journal;
   final Insights insights;
+  final List<Milestone> newMilestones;
+  final String? examDateKey;
+  final ExamCountdown? countdown;
+  final bool weakPingDismissed;
 
   const _HomeData({
     required this.questions,
@@ -447,5 +611,9 @@ class _HomeData {
     required this.qotd,
     required this.journal,
     required this.insights,
+    required this.newMilestones,
+    required this.examDateKey,
+    required this.countdown,
+    required this.weakPingDismissed,
   });
 }
