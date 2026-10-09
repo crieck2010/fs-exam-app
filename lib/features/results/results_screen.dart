@@ -13,12 +13,16 @@ class ResultsScreen extends StatelessWidget {
   final String title;
   final List<Question> allQuestions;
 
+  /// Forwarded to retake/drill sessions so SRS keeps learning.
+  final Future<void> Function(Question question, bool isCorrect)? onAnswerLocked;
+
   const ResultsScreen({
     super.key,
     required this.records,
     required this.total,
     required this.title,
     required this.allQuestions,
+    this.onAnswerLocked,
   });
 
   @override
@@ -129,8 +133,11 @@ class ResultsScreen extends StatelessWidget {
                       final retry = List<Question>.of(allQuestions)..shuffle();
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (_) =>
-                              QuizScreen(questions: retry, title: title),
+                          builder: (_) => QuizScreen(
+                            questions: retry,
+                            title: title,
+                            onAnswerLocked: onAnswerLocked,
+                          ),
                         ),
                       );
                     },
@@ -145,7 +152,10 @@ class ResultsScreen extends StatelessWidget {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (_) => QuizScreen(
-                                questions: drill, title: '$title — misses'),
+                              questions: drill,
+                              title: '$title — misses',
+                              onAnswerLocked: onAnswerLocked,
+                            ),
                           ),
                         );
                       },

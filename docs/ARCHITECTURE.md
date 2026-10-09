@@ -21,11 +21,17 @@ lib/
         models/question.dart       Dart mirror of engine schema v1 (validated).
         bank_repository.dart       Asset loading + v1 contract validation.
     features/
-        domains/                   Section picker (7 FS domains, multi-select).
+        domains/                   Home: study hub (streak, QOTD, review queue)
+                                   + domain section picker.
         quiz/                      Session state (QuizController) + one-question
                                    screens with immediate feedback.
         results/                   Score, per-domain breakdown, miss review.
         settings/                  Theme mode segmented control, about.
+        study/
+            srs/                   SM-2 scheduler (pure Dart, no Flutter) +
+                                   StudyRepository (SharedPreferences).
+            streaks/               Pure streak state machine.
+            qotd/                  Deterministic daily question + controller.
 
 assets/banks/*.json                Engine-generated banks (tools/generate_banks.py).
 tools/generate_banks.py            Regenerates assets from the Python engine.
@@ -60,6 +66,10 @@ ResultsScreen: score, per-domain breakdown, drill-misses
    immediately (study value).
 6. **Monetization is a seam, not a feature.** `Entitlements` is checked at
    quiz start; the stub grants everything. Phase 3 swaps the implementation.
+7. **Study state is layered, not entangled.** `QuizController` exposes an
+   `onAnswerLocked` hook; the study layer (`features/study`) wires SRS
+   recording, QOTD, and streaks through it. The scheduler itself is pure
+   Dart — see `docs/SPACED_REPETITION.md`.
 
 ## Scaling notes
 

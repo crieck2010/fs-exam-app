@@ -15,8 +15,12 @@ engine, with worked explanations on every answer. Light and dark mode included.
   versioned engine; new seeds = fresh exams (`tools/generate_banks.py`)
 - **Study-grade feedback** — answers lock on first tap (exam discipline),
   explanations reveal immediately (study value)
+- **Study system** — question of the day (same for everyone, daily),
+  streaks with best-day tracking, and SM-2 spaced repetition: every answer
+  schedules the question's next review, and the "due for review" queue
+  serves the most overdue first
 - **Results** — score, per-section breakdown, expandable miss review,
-  retake and drill-your-misses modes
+  retake and drill-your-misses modes (SRS keeps learning through retakes)
 - **Light / dark / system theme** — Material 3, persisted across launches
 - **Contract-validated banks** — every bank is validated against engine
   schema v1 on load; corrupt banks fail loudly, never silently misgrade
@@ -68,7 +72,9 @@ tools/generate_banks.py
 ## Roadmap
 
 - **v0.1.0** ✅ — shell: picker, quiz, results, theming, validated banks
-- **v0.2.0** — question-of-the-day, streaks, spaced-repetition scheduling
+- **v0.2.0** ✅ — question-of-the-day, streaks, SM-2 spaced repetition
+- **v0.3.0** — confidence-graded reviews (full 0–5 SM-2 quality), weekly
+  study report, sqflite if history outgrows SharedPreferences
 - **Phase 3** — freemium (free daily quota + AdMob) + one-time unlock via
   the `Entitlements` seam; store listings (Play $25, Apple $99/yr)
 

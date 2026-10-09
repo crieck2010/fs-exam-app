@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../data/models/question.dart';
@@ -19,10 +21,16 @@ class AnswerRecord {
 class QuizController extends ChangeNotifier {
   final List<Question> questions;
 
+  /// Called exactly once per question when an answer locks in. The study
+  /// layer wires this to SRS recording / QOTD / streaks; the controller
+  /// itself stays persistence-agnostic.
+  final Future<void> Function(Question question, bool isCorrect)? onAnswerLocked;
+
   int _index = 0;
   final Map<String, int> _answers = {};
 
-  QuizController(this.questions) : assert(questions.isNotEmpty);
+  QuizController(this.questions, {this.onAnswerLocked})
+      : assert(questions.isNotEmpty);
 
   int get index => _index;
   int get total => questions.length;
@@ -35,8 +43,14 @@ class QuizController extends ChangeNotifier {
   /// Locks in an answer. Ignored if the question was already answered.
   void select(int choiceIndex) {
     if (answered) return;
-    _answers[current.qid] = choiceIndex;
+    final question = current;
+    _answers[question.qid] = choiceIndex;
     notifyListeners();
+    // Fire-and-forget: study persistence must never block the UI.
+    final hook = onAnswerLocked;
+    if (hook != null) {
+      unawaited(hook(question, question.isCorrect(choiceIndex)));
+    }
   }
 
   void next() {

@@ -11,7 +11,16 @@ class QuizScreen extends StatefulWidget {
   final List<Question> questions;
   final String title;
 
-  const QuizScreen({super.key, required this.questions, required this.title});
+  /// Wired by the study layer (SRS recording, QOTD, streaks). Null for
+  /// plain practice sessions.
+  final Future<void> Function(Question question, bool isCorrect)? onAnswerLocked;
+
+  const QuizScreen({
+    super.key,
+    required this.questions,
+    required this.title,
+    this.onAnswerLocked,
+  });
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -23,7 +32,8 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = QuizController(widget.questions);
+    _controller = QuizController(widget.questions,
+        onAnswerLocked: widget.onAnswerLocked);
     _controller.addListener(_refresh);
   }
 
@@ -213,6 +223,7 @@ class _QuizScreenState extends State<QuizScreen> {
           total: _controller.total,
           title: widget.title,
           allQuestions: _controller.questions,
+          onAnswerLocked: widget.onAnswerLocked,
         ),
       ),
     );
