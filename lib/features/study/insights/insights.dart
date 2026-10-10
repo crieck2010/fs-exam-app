@@ -1,4 +1,4 @@
-import '../../data/models/question.dart';
+import '../../../data/models/question.dart';
 import '../study_event.dart';
 
 /// Accuracy insight for one domain.

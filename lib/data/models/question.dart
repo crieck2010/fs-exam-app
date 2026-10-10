@@ -64,11 +64,11 @@ class Question {
     }
     final rawChoices = json['choices'];
     if (rawChoices is! List || rawChoices.length != 4) {
-      throw BankFormatException('choices must be a list of 4 strings');
+      throw const BankFormatException('choices must be a list of 4 strings');
     }
     final choices = rawChoices.map((e) => e.toString()).toList();
     if (choices.toSet().length != 4 || choices.any((c) => c.isEmpty)) {
-      throw BankFormatException('choices must be 4 unique non-empty strings');
+      throw const BankFormatException('choices must be 4 unique non-empty strings');
     }
     final answerIndex = json['answer_index'];
     if (answerIndex is! int || answerIndex < 0 || answerIndex > 3) {
@@ -77,11 +77,11 @@ class Question {
     final stem = json['stem'].toString();
     final explanation = json['explanation'].toString();
     if (stem.isEmpty || explanation.isEmpty) {
-      throw BankFormatException('stem and explanation must be non-empty');
+      throw const BankFormatException('stem and explanation must be non-empty');
     }
     final parameters = json['parameters'];
     if (parameters is! Map) {
-      throw BankFormatException('parameters must be an object');
+      throw const BankFormatException('parameters must be an object');
     }
     return Question(
       qid: json['qid'].toString(),

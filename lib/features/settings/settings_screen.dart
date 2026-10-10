@@ -80,7 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: notifications.qotdEnabled,
                 onChanged: (value) async {
                   await notifications.setQotdEnabled(value);
-                  await _resync(context, notifications);
+                  await _resync(notifications);
+                  if (context.mounted) setState(() {});
                 },
               ),
               SwitchListTile(
@@ -92,7 +93,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: notifications.streakSaverEnabled,
                 onChanged: (value) async {
                   await notifications.setStreakSaverEnabled(value);
-                  await _resync(context, notifications);
+                  await _resync(notifications);
+                  if (context.mounted) setState(() {});
                 },
               ),
               SwitchListTile(
@@ -103,7 +105,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: notifications.weeklyEnabled,
                 onChanged: (value) async {
                   await notifications.setWeeklyEnabled(value);
-                  await _resync(context, notifications);
+                  await _resync(notifications);
+                  if (context.mounted) setState(() {});
                 },
               ),
               TextButton.icon(
@@ -162,13 +165,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Reconciles schedules with the new toggle state. Conservative: never
   /// arms a streak saver from Settings (home re-arms it on every open
   /// with real state).
-  Future<void> _resync(
-      BuildContext context, NotificationService notifications) async {
+  Future<void> _resync(NotificationService notifications) async {
     await notifications.refreshSchedules(
       qotdAnsweredToday: true,
       streakCount: 0,
     );
-    if (context.mounted) setState(() {});
   }
 
   Future<void> _pickExamDate(BuildContext context) async {

@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../study_event.dart';
-import 'srs/srs_record.dart';
-import 'streaks/streak_logic.dart';
+import 'srs_record.dart';
+import '../streaks/streak_logic.dart';
 
 /// Persists per-user study state: SRS records, answer journal, streak,
 /// and question-of-the-day.

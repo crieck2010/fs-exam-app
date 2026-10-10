@@ -146,7 +146,7 @@ class ResultsScreen extends StatelessWidget {
                   ),
                   if (missed.isNotEmpty)
                     OutlinedButton.icon(
-                      icon: const Icon(Icons.target),
+                      icon: const Icon(Icons.track_changes),
                       label: const Text('Drill misses'),
                       onPressed: () {
                         final drill =

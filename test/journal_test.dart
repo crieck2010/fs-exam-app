@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fs_exam_app/data/models/question.dart';
 import 'package:fs_exam_app/features/study/srs/confidence.dart';
-import 'package:fs_exam_app/features/study/srs/srs_record.dart';
 import 'package:fs_exam_app/features/study/srs/study_repository.dart';
 import 'package:fs_exam_app/features/study/study_event.dart';
 import 'package:shared_preferences/shared_preferences.dart';

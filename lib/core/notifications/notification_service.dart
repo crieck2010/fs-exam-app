@@ -1,7 +1,9 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz
+    show TZDateTime, getLocation, setLocalLocation, local;
 
 /// Local-notification nudges for the study loop.
 ///
@@ -53,14 +55,14 @@ class NotificationService {
     try {
       tz.initializeTimeZones();
       try {
-        final name = await FlutterTimezone.getLocalTimezone();
-        tz.setLocalLocation(tz.getLocation(name));
+        final tzInfo = await FlutterTimezone.getLocalTimezone();
+        tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
       } catch (_) {
         // Fall back to tz.local (UTC); times may be off until next launch.
       }
       _plugin = FlutterLocalNotificationsPlugin();
       await _plugin!.initialize(
-        const InitializationSettings(
+        settings: const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
           iOS: DarwinInitializationSettings(),
         ),
@@ -118,12 +120,12 @@ class NotificationService {
           match: DateTimeComponents.time,
         );
       } else {
-        await plugin.cancel(_idQotd);
+        await plugin.cancel(id: _idQotd);
       }
 
       // Re-arm the saver every open; it only fires if the QOTD is still
       // unanswered at 8 PM. No streak, no saver — the morning nudge suffices.
-      await plugin.cancel(_idStreakSaver);
+      await plugin.cancel(id: _idStreakSaver);
       if (!qotdAnsweredToday && streakSaverEnabled && streakCount > 0) {
         await _scheduleOnceToday(
           id: _idStreakSaver,
@@ -143,7 +145,7 @@ class NotificationService {
           match: DateTimeComponents.dayOfWeekAndTime,
         );
       } else {
-        await plugin.cancel(_idWeekly);
+        await plugin.cancel(id: _idWeekly);
       }
     } catch (_) {
       // A failed schedule must never break the study flow.

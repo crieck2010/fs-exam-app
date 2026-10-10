@@ -15,6 +15,7 @@ class FsExamApp extends StatelessWidget {
     final themeMode = context.watch<ThemeController>().mode;
     return MaterialApp(
       title: 'FS Exam Prep',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,

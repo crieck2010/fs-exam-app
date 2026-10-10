@@ -476,7 +476,7 @@ class _DomainPickerScreenState extends State<DomainPickerScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading:
-            Icon(Icons.target, size: 32, color: theme.colorScheme.error),
+            Icon(Icons.track_changes, size: 32, color: theme.colorScheme.error),
         title: Text('Focus area: ${info.name}'),
         subtitle: Text(
             '${(top.accuracy * 100).round()}% over ${top.answered} answers '

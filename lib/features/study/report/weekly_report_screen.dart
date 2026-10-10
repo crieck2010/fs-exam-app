@@ -102,7 +102,6 @@ class WeeklyReportScreen extends StatelessWidget {
   }
 
   Widget _headlineRow(BuildContext context, WeeklyReport report) {
-    final theme = Theme.of(context);
     return Row(
       children: [
         _statCard(context, '${report.answered}', 'answered'),
@@ -193,7 +192,7 @@ class WeeklyReportScreen extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: Icon(
-          isFocus ? Icons.target : Icons.emoji_events_outlined,
+          isFocus ? Icons.track_changes : Icons.emoji_events_outlined,
           color: isFocus ? theme.colorScheme.error : Colors.green,
         ),
         title: Text(info.name),

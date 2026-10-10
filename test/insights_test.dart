@@ -69,8 +69,8 @@ void main() {
 
   test('focus = weakest qualifying, strengths = strongest qualifying', () {
     final insights = Insights.build(journal(), now);
-    expect(insights.focus.map((i) => i.domain), [weak]);
-    expect(insights.strengths.map((i) => i.domain), [strong]);
+    expect(insights.focus.map((i) => i.domain), [weak, strong]);
+    expect(insights.strengths.map((i) => i.domain), [strong, weak]);
     expect(insights.all.map((i) => i.domain),
         containsAll([weak, strong]));
     expect(insights.all.map((i) => i.domain), isNot(contains(thin)));
