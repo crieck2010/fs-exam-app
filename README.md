@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **Consolidated into [NCEES Exam Prep](https://github.com/crieck2010/ncees-exam-prep)**  
+> This project has been consolidated into the unified [ncees-exam-prep monorepo](https://github.com/crieck2010/ncees-exam-prep). Active development, releases, question bank generation, and CI testing now live in `ncees-exam-prep`. This repository is preserved as an archive.
+
 # fs-exam-app
 
 **Quiz practice for the NCEES FS exam — iOS and Android. Phase 2 of the FS Exam Prep program.**
@@ -99,3 +103,4 @@ here with the new assets. Never hand-edit `assets/banks/*.json`.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
